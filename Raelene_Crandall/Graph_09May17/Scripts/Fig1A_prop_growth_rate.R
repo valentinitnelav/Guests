@@ -1,3 +1,7 @@
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Uses base R plot function for an interaction plot design
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # read data
 Parameters <- read.csv("Data/AilanthusParameters4R.csv")
 
