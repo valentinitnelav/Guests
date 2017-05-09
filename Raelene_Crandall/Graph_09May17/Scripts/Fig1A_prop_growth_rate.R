@@ -1,7 +1,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Uses base R plot function for an interaction plot design
 # Original code from Rae.
-# Using plot() and points() instead of lineplot.CI() 
+# Updated to using plot() and points() instead of lineplot.CI() 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # read data
