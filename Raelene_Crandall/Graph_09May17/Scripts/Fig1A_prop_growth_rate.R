@@ -1,3 +1,4 @@
+# read data
 Parameters <- read.csv("Data/AilanthusParameters4R.csv")
 
 # Create an empty plot (type = "n") but with bounding box
