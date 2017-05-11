@@ -68,10 +68,13 @@ CIs <- lapply(unique(myDT.gr.all[,Trt]), function(trt){
                         Burn = c("Y","N"))
     return(res)
 })
+# Rbind the list of data tables from above in one big data table
 CIs <- rbindlist(CIs)
 
+# Merge the CI results to the main aggregation table
 myDT.gr.all <- merge(myDT.gr.all, CIs, by = c("Trt", "Burn"))
 
+# Create a column to dictate order of bar plotting in ggplot
 myDT.gr.all[, TrtBurn := paste(Trt,Burn,sep="_")]
 
 # ==================================
@@ -83,36 +86,48 @@ ggplot(data = myDT.gr.all,
            fill = Burn)) +
     
     # add the bars (means)
-    geom_col(position = position_dodge(), 
+    geom_col(position = position_dodge(.9), 
              width    = .7) +
     # fill the bars manually
-    scale_fill_manual(name   = "Burned",
+    scale_fill_manual(name   = "",
                       breaks = c("Y", "N"),
                       values = c("Y" = "gray70", 
                                  "N" = "gray40"),
                       labels = c("Burned", "Unburned")) + 
     # set order of discrete values on OX axes & adjust the distance (gap) from OY axes
     scale_x_discrete(limits = c("Control_Y", "Comp_Y", "Herb_Y", "Control_N", "Comp_N", "Herb_N"),
-                     labels = rep(c("Control", "Competitor \n Removal", "Herbivore \n Removal"), times=2),
+                     labels = rep(c("Control", "Competitor\nRemoval", "Herbivore\nRemoval"), times=2),
                      expand = c(0, .5)) +
     # set range on OY axes and adjust the distance (gap) from OX axes
     scale_y_continuous(limits = c(0, 1), 
                        expand = c(0, 0)) +
     geom_text(aes(label = all, 
-                  y     = prob.surv + 0.03),
-              position  = position_dodge(.9),
+                  y     = prob.surv + 0.05),
+              # position  = position_dodge(.9),
               vjust     = "right",
-              hjust     = "right") +
-    # plot CIs (add a point shape at middle)
+              hjust     = "right",
+              nudge_x   = -.05,
+              size      = 2,
+              show.legend = FALSE) +
+    # plot CI bars
     geom_errorbar(aes(ymax = up.CI, 
                       ymin = low.CI), 
                   size     = .4, 
                   width    = .15, 
                   linetype = "solid", 
-                  position = position_dodge(.9)) +
+                  position = position_dodge(.9),
+                  show.legend = FALSE) +
+    # add a small indicator shape at the middle of CI bars
     geom_point(position = position_dodge(.9), 
                shape    = "-", 
                show.legend = FALSE) +
+    # Add annotation - letter D
+    annotate(geom  = "text", 
+             x     = 0.7, 
+             y     = 0.97, 
+             label = "D",
+             size  = 3,
+             fontface = 2) +
     
     # Final adjustments:
     # set axis labels
@@ -123,29 +138,29 @@ ggplot(data = myDT.gr.all,
           panel.grid.minor = element_blank(), # eliminate minor grids
           # set font family for all text within the plot ("serif" should work as "Times New Roman")
           # note that this can be overridden with other adjustment functions below
-          text = element_text(family="serif"),
+          # text = element_text(family="serif"),
           # adjust X-axis title
-          axis.title.x = element_text(size = 10, face = "bold"),
+          # axis.title.x = element_text(size = 10, face = "bold"),
           # adjust X-axis labels
-          axis.text.x  = element_text(size = 10, face = "plain", color="black"),
+          axis.text.x  = element_text(size = 8, face = "plain", color="black"),
           # adjust Y-axis title
           axis.title.y = element_text(size = 10, face = "bold"),
           # adjust Y-axis labels
-          axis.text.y  = element_text(size = 10, face = "plain", color="black"),
+          axis.text.y  = element_text(size = 8, face = "plain", color="black"),
           # adjust legend title appearance
-          legend.title = element_text(size = 10, face = "bold"),
+          # legend.title = element_text(size = 10, face = "bold"),
           # adjust legend label appearance
-          legend.text  = element_text(size = 10, face = "plain"),
+          legend.text  = element_text(size = 8, face = "plain"),
           # change spacing between legend items
           legend.key.height = unit(5, "mm"),
           # don't draw legend box (check element_rect() for borders and backgrounds)
           legend.background = element_blank(),
 
-          legend.justification = c(1,1),
-          legend.position = c(1,1))
+          legend.justification = c(1, 1),
+          legend.position = c(1, 1.05))
 
 # save as pdf
-ggsave("barplot with CI bars - ggplot.pdf", width=12, height=8, units="cm")
+ggsave("Output/Fig1D - barplot with CI bars - ggplot.pdf", width=12, height=10, units="cm")
 
 # ===========================================
 # some part of the original code from Rae
