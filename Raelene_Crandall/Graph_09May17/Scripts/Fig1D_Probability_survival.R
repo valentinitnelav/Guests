@@ -73,12 +73,12 @@ ggplot(data = myDT.gr.CI,
              width    = .7) +
     # fill the bars manually
     scale_fill_manual(name   = "",
-                      breaks = c("Y", "N"),
-                      values = c("Y" = "gray70", 
-                                 "N" = "gray40"),
-                      labels = c("Burned", "Unburned")) + 
+                      breaks = c("N", "Y"),
+                      values = c("N" = "gray70", 
+                                 "Y" = "gray40"),
+                      labels = c("Unburned", "Burned")) + 
     # set order of discrete values on OX axes & adjust the distance (gap) from OY axes
-    scale_x_discrete(limits = c("Control_Y", "Comp_Y", "Herb_Y", "Control_N", "Comp_N", "Herb_N"),
+    scale_x_discrete(limits = c("Control_N", "Comp_N", "Herb_N", "Control_Y", "Comp_Y", "Herb_Y"),
                      labels = rep(c("Control", "Competitor\nRemoval", "Herbivore\nRemoval"), times=2),
                      expand = c(0, .5)) +
     # set range on OY axes and adjust the distance (gap) from OX axes
