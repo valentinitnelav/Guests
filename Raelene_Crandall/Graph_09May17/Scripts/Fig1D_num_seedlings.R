@@ -11,21 +11,18 @@ str(myDT) # check structure
 
 # remove all rows with NA-s in Survival2 column
 myDT.noNA <- myDT[!is.na(Survival2)]
-
 # aggregate by Trt & Burn columns + compute alive & total columns
 myDT.gr <- myDT.noNA[,
                      .(alive = sum(Survival2, na.rm=TRUE),
                        total = .N # .N is a key word in data.table syntax, 
-                                  # it counts number of rows for each group combination defined in "by":  by = .(Trt, Burn)
+                       # it counts number of rows for each group combination defined in "by":  by = .(Trt, Burn)
                      ),
                      by = .(Trt, Burn)]
-# Count also total records, including NAs for Trt & Burn combinations
-myDT.all <- myDT[,.(all=.N),by = .(Trt, Burn)]
-myDT.gr.all <- cbind(myDT.gr, myDT.all[,.(all)])
+
 # remove rows with "All" from aggregation table
-myDT.gr.all <- myDT.gr.all[Trt != "All"]
+myDT.gr <- myDT.gr[Trt != "All"]
 # compute Probability of Survival column
-myDT.gr.all[, prob.surv := alive/total]
+myDT.gr[, prob.surv := alive/total]
 
 # ==================================
 # Bootstrap CIs
@@ -34,8 +31,9 @@ myDT.gr.all[, prob.surv := alive/total]
 # Number of iterations (N) and CI% can be also customized.
 # It samples N times with replacements, each times computes an average of the new sample;
 # Sorts the N averages and takes the positions corresponding to given CI%
-bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95){
+bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95, seed = 2017){
     stopifnot(is.vector(x), N > 0, is.numeric(CI), CI > 0, CI < 1)
+    set.seed(seed)
     rep_avg <- replicate(N, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
     rep_avg <- sort(rep_avg, na.last = NA)
     low.prc <- (1 - CI)/2
@@ -47,24 +45,36 @@ bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95){
     return(c(low.CI, up.CI))
 }
 # Example
-# set.seed(2017)
-# bootstrap.CI.percentile(x = myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", Survival2])
+y <- myDT.noNA[Trt %like% "Comp|All" & Burn %like% "N|All", Survival2]
+y <- myDT.noNA[Trt %like% "Comp|All" & Burn %like% "Y|All", Survival2]
+y <- myDT.noNA[Trt %like% "Control|All" & Burn %like% "N|All", Survival2]
+y <- myDT.noNA[Trt %like% "Control|All" & Burn %like% "Y|All", Survival2]
+y <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", Survival2]
+y <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", Survival2]
+bootstrap.CI.percentile(x = y, seed = 2017)
+bootstrap.CI.empirical(x = y, seed = 2017)
+
+set.seed(2017)
+sort(replicate(1000, mean(sample(y, length(y), replace = TRUE))))[25]
+set.seed(2017)
+sort(replicate(1000, mean(sample(y, length(y), replace = TRUE))))[975]
 
 # For testing resons: the above gives same results as in boot::boot.ci function
 # library(boot)
-# x <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", Survival2]
-# set.seed(2017)
-# b <- boot(x, function(u,i) mean(u[i]), R = 999)
-# boot.ci(b, type = "perc")
-# rm(b,x)
 
+set.seed(2017)
+b <- boot(y, function(u,i) mean(u[i]), R = 999)
+set.seed(2017)
+boot.ci(b, type = "all")
+rm(b,y)
+identical(y,x)
 # Compute percentile bootstrap CI 
 set.seed(2017)
-CIs <- lapply(unique(myDT.gr.all[,Trt]), function(trt){
-    trt.Y <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(trt,"|All") & Burn %like% "Y|All", Survival2])
-    trt.N <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(trt,"|All") & Burn %like% "N|All", Survival2])
+CIs <- lapply(unique(myDT.gr[,Trt]), function(my.trt){
+    trt.Y <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "Y|All", Survival2])
+    trt.N <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "N|All", Survival2])
     res   <- data.table(rbind(trt.Y, trt.N), 
-                        Trt  = trt, 
+                        Trt  = my.trt, 
                         Burn = c("Y","N"))
     return(res)
 })
@@ -72,15 +82,15 @@ CIs <- lapply(unique(myDT.gr.all[,Trt]), function(trt){
 CIs <- rbindlist(CIs)
 
 # Merge the CI results to the main aggregation table
-myDT.gr.all <- merge(myDT.gr.all, CIs, by = c("Trt", "Burn"))
+myDT.gr.CI <- merge(myDT.gr, CIs, by = c("Trt", "Burn"))
 
 # Create a column to dictate order of bar plotting in ggplot
-myDT.gr.all[, TrtBurn := paste(Trt,Burn,sep="_")]
+myDT.gr.CI[, TrtBurn := paste(Trt,Burn,sep="_")]
 
 # ==================================
 # Plot barplot with ggplot
 # ==================================
-ggplot(data = myDT.gr.all, 
+ggplot(data = myDT.gr.CI, 
        aes(x    = TrtBurn, 
            y    = prob.surv,
            fill = Burn)) +
@@ -101,7 +111,7 @@ ggplot(data = myDT.gr.all,
     # set range on OY axes and adjust the distance (gap) from OX axes
     scale_y_continuous(limits = c(0, 1), 
                        expand = c(0, 0)) +
-    geom_text(aes(label = all, 
+    geom_text(aes(label = total, 
                   y     = prob.surv + 0.05),
               # position  = position_dodge(.9),
               vjust     = "right",
