@@ -144,7 +144,7 @@ ggplot(data = myDT.gr.CI,
 
 # save as pdf
 ggsave("Output/Fig1D - barplot with CI bars - ggplot.pdf", width=12, height=10, units="cm")
-
+write.csv(myDT.gr.CI, "Output/summary.csv", row.names = FALSE)
 # ===========================================
 # some part of the original code from Rae
 # ===========================================
