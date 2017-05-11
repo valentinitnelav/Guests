@@ -68,8 +68,30 @@ set.seed(2017)
 boot.ci(b, type = "all")
 rm(b,y)
 identical(y,x)
+
 # Compute percentile bootstrap CI 
-set.seed(2017)
+
+boot.CI.percentile <- function(x, R = 1000, seed = 2017){
+    set.seed(seed)
+    rep_avg <- replicate(R, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
+    rep_avg <- sort(rep_avg, na.last = NA)
+    low.CI  <- rep_avg[25]  
+    up.CI   <- rep_avg[975] 
+    CIs <- list(low.CI, up.CI)
+    names(CIs) <- c("low.CI", "up.CI")
+    return(CIs)
+}
+boot.CI.percentile(y)
+
+
+myDT.noNA[Trt %like% "Comp|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
+myDT.noNA[Trt %like% "Comp|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
+myDT.noNA[Trt %like% "Control|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
+myDT.noNA[Trt %like% "Control|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
+myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
+myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
+
+
 CIs <- lapply(unique(myDT.gr[,Trt]), function(my.trt){
     trt.Y <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "Y|All", Survival2])
     trt.N <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "N|All", Survival2])
