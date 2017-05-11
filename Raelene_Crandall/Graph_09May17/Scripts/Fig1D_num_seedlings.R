@@ -24,56 +24,19 @@ myDT.gr <- myDT.gr[Trt != "All"]
 # compute Probability of Survival column
 myDT.gr[, prob.surv := alive/total]
 
+# Create a column to dictate order of bar plotting in ggplot
+myDT.gr[, TrtBurn := paste(Trt,Burn,sep="_")]
+myDT.gr
+
 # ==================================
 # Bootstrap CIs
 # ==================================
-# Below is a function that can compute a bootstrapping percentile CI-s for a given sample (vector) x.
-# Number of iterations (N) and CI% can be also customized.
-# It samples N times with replacements, each times computes an average of the new sample;
-# Sorts the N averages and takes the positions corresponding to given CI%
-bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95, seed = 2017){
-    stopifnot(is.vector(x), N > 0, is.numeric(CI), CI > 0, CI < 1)
+# Below is a function that can compute a bootstrapping percentile CI-s (95%) for a given sample (vector) x.
+# It samples 1000 times with replacements, each times computes an average of the new sample;
+# Sorts the 1000 averages and takes the 25th and 975th positions
+boot.CI.percentile <- function(x, seed = 2017){
     set.seed(seed)
-    rep_avg <- replicate(N, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
-    rep_avg <- sort(rep_avg, na.last = NA)
-    low.prc <- (1 - CI)/2
-    up.prc  <- 1 - (1 - CI)/2
-    low.CI  <- rep_avg[round(low.prc * N)]
-    names(low.CI) <- "low.CI"
-    up.CI   <- rep_avg[round(up.prc * N)]
-    names(up.CI) <- "up.CI"
-    return(c(low.CI, up.CI))
-}
-# Example
-y <- myDT.noNA[Trt %like% "Comp|All" & Burn %like% "N|All", Survival2]
-y <- myDT.noNA[Trt %like% "Comp|All" & Burn %like% "Y|All", Survival2]
-y <- myDT.noNA[Trt %like% "Control|All" & Burn %like% "N|All", Survival2]
-y <- myDT.noNA[Trt %like% "Control|All" & Burn %like% "Y|All", Survival2]
-y <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", Survival2]
-y <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", Survival2]
-bootstrap.CI.percentile(x = y, seed = 2017)
-bootstrap.CI.empirical(x = y, seed = 2017)
-
-set.seed(2017)
-sort(replicate(1000, mean(sample(y, length(y), replace = TRUE))))[25]
-set.seed(2017)
-sort(replicate(1000, mean(sample(y, length(y), replace = TRUE))))[975]
-
-# For testing resons: the above gives same results as in boot::boot.ci function
-# library(boot)
-
-set.seed(2017)
-b <- boot(y, function(u,i) mean(u[i]), R = 999)
-set.seed(2017)
-boot.ci(b, type = "all")
-rm(b,y)
-identical(y,x)
-
-# Compute percentile bootstrap CI 
-
-boot.CI.percentile <- function(x, R = 1000, seed = 2017){
-    set.seed(seed)
-    rep_avg <- replicate(R, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
+    rep_avg <- replicate(1000, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
     rep_avg <- sort(rep_avg, na.last = NA)
     low.CI  <- rep_avg[25]  
     up.CI   <- rep_avg[975] 
@@ -81,33 +44,21 @@ boot.CI.percentile <- function(x, R = 1000, seed = 2017){
     names(CIs) <- c("low.CI", "up.CI")
     return(CIs)
 }
-boot.CI.percentile(y)
 
-
-myDT.noNA[Trt %like% "Comp|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
-myDT.noNA[Trt %like% "Comp|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
-myDT.noNA[Trt %like% "Control|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
-myDT.noNA[Trt %like% "Control|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
-myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)]
-myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)]
-
-
-CIs <- lapply(unique(myDT.gr[,Trt]), function(my.trt){
-    trt.Y <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "Y|All", Survival2])
-    trt.N <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(my.trt,"|All") & Burn %like% "N|All", Survival2])
-    res   <- data.table(rbind(trt.Y, trt.N), 
-                        Trt  = my.trt, 
-                        Burn = c("Y","N"))
-    return(res)
-})
+# Compute percentile bootstrap CI
+CIs <- list(
+    myDT.noNA[Trt %like% "Comp|All"    & Burn %like% "N|All", boot.CI.percentile(Survival2)][, TrtBurn := "Comp_N"][],
+    myDT.noNA[Trt %like% "Comp|All"    & Burn %like% "Y|All", boot.CI.percentile(Survival2)][, TrtBurn := "Comp_Y"][],
+    myDT.noNA[Trt %like% "Control|All" & Burn %like% "N|All", boot.CI.percentile(Survival2)][, TrtBurn := "Control_N"][],
+    myDT.noNA[Trt %like% "Control|All" & Burn %like% "Y|All", boot.CI.percentile(Survival2)][, TrtBurn := "Control_Y"][],
+    myDT.noNA[Trt %like% "Herb|All"    & Burn %like% "N|All", boot.CI.percentile(Survival2)][, TrtBurn := "Herb_N"][],
+    myDT.noNA[Trt %like% "Herb|All"    & Burn %like% "Y|All", boot.CI.percentile(Survival2)][, TrtBurn := "Herb_Y"][]
+)
 # Rbind the list of data tables from above in one big data table
 CIs <- rbindlist(CIs)
 
 # Merge the CI results to the main aggregation table
-myDT.gr.CI <- merge(myDT.gr, CIs, by = c("Trt", "Burn"))
-
-# Create a column to dictate order of bar plotting in ggplot
-myDT.gr.CI[, TrtBurn := paste(Trt,Burn,sep="_")]
+myDT.gr.CI <- merge(myDT.gr, CIs, by = "TrtBurn")
 
 # ==================================
 # Plot barplot with ggplot
