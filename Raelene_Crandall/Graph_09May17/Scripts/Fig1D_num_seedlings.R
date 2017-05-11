@@ -5,24 +5,35 @@ library(ggplot2)
 # ==================================
 # Read & prepare data
 # ==================================
+# read data & make data.table object
 myDT <- fread("Data/Ailanthus year 2 post-fire.csv")
-str(myDT)
+str(myDT) # check structure
+
+# remove all rows with NA-s in Survival2 column
 myDT.noNA <- myDT[!is.na(Survival2)]
 
+# aggregate by Trt & Burn columns + compute alive & total columns
 myDT.gr <- myDT.noNA[,
                      .(alive = sum(Survival2, na.rm=TRUE),
-                       total = .N
+                       total = .N # .N is a key word in data.table syntax, 
+                                  # it counts number of rows for each group combination defined in "by":  by = .(Trt, Burn)
                      ),
                      by = .(Trt, Burn)]
+# Count also total records, including NAs for Trt & Burn combinations
 myDT.all <- myDT[,.(all=.N),by = .(Trt, Burn)]
 myDT.gr.all <- cbind(myDT.gr, myDT.all[,.(all)])
+# remove rows with "All" from aggregation table
 myDT.gr.all <- myDT.gr.all[Trt != "All"]
-
+# compute Probability of Survival column
 myDT.gr.all[, prob.surv := alive/total]
 
 # ==================================
 # Bootstrap CIs
 # ==================================
+# Below is a function that can compute a bootstrapping percentile CI-s for a given sample (vector) x.
+# Number of iterations (N) and CI% can be also customized.
+# It samples N times with replacements, each times computes an average of the new sample;
+# Sorts the N averages and takes the positions corresponding to given CI%
 bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95){
     stopifnot(is.vector(x), N > 0, is.numeric(CI), CI > 0, CI < 1)
     rep_avg <- replicate(N, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
@@ -36,18 +47,18 @@ bootstrap.CI.percentile <- function(x, N = 1000, CI = 0.95){
     return(c(low.CI, up.CI))
 }
 # Example
-set.seed(2017)
-bootstrap.CI.percentile(x = myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", Survival2])
+# set.seed(2017)
+# bootstrap.CI.percentile(x = myDT.noNA[Trt %like% "Herb|All" & Burn %like% "Y|All", Survival2])
 
 # For testing resons: the above gives same results as in boot::boot.ci function
-library(boot)
-x <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", Survival2]
-set.seed(2017)
-b <- boot(x, function(u,i) mean(u[i]), R = 999)
-boot.ci(b, type = "perc")
-rm(b,x)
+# library(boot)
+# x <- myDT.noNA[Trt %like% "Herb|All" & Burn %like% "N|All", Survival2]
+# set.seed(2017)
+# b <- boot(x, function(u,i) mean(u[i]), R = 999)
+# boot.ci(b, type = "perc")
+# rm(b,x)
 
-
+# Compute percentile bootstrap CI 
 set.seed(2017)
 CIs <- lapply(unique(myDT.gr.all[,Trt]), function(trt){
     trt.Y <- bootstrap.CI.percentile(x=myDT.noNA[Trt %like% paste0(trt,"|All") & Burn %like% "Y|All", Survival2])
@@ -61,33 +72,47 @@ CIs <- rbindlist(CIs)
 
 myDT.gr.all <- merge(myDT.gr.all, CIs, by = c("Trt", "Burn"))
 
+myDT.gr.all[, TrtBurn := paste(Trt,Burn,sep="_")]
+
 # ==================================
 # Plot barplot with ggplot
 # ==================================
 ggplot(data = myDT.gr.all, 
-       aes(x    = Trt, 
-           y    = prob.surv, 
+       aes(x    = TrtBurn, 
+           y    = prob.surv,
            fill = Burn)) +
     
     # add the bars (means)
-    geom_bar(stat="identity", position=position_dodge()) +
+    geom_col(position = position_dodge(), 
+             width    = .7) +
     # fill the bars manually
     scale_fill_manual(name   = "Burned",
-                      breaks = c("N", "Y"),
-                      values = c("N" = "gray70", 
-                                 "Y" = "gray40"),
-                      labels = c("Unburned", "Burned")) + 
-    
-    # plot CIs (add a point shape as well)
-    geom_errorbar(aes(ymax=up.CI, ymin=low.CI), size=.4, width=.15, linetype="solid", position=position_dodge(.9)) +
-    geom_point(position=position_dodge(width=.9), shape="-", show.legend = FALSE) +
-    
+                      breaks = c("Y", "N"),
+                      values = c("Y" = "gray70", 
+                                 "N" = "gray40"),
+                      labels = c("Burned", "Unburned")) + 
     # set order of discrete values on OX axes & adjust the distance (gap) from OY axes
-    scale_x_discrete(limits = c("Control", "Comp", "Herb"),
-                     labels = c("Control", "Competitor \n Removal", "Herbivore \n Removal"),
+    scale_x_discrete(limits = c("Control_Y", "Comp_Y", "Herb_Y", "Control_N", "Comp_N", "Herb_N"),
+                     labels = rep(c("Control", "Competitor \n Removal", "Herbivore \n Removal"), times=2),
                      expand = c(0, .5)) +
     # set range on OY axes and adjust the distance (gap) from OX axes
-    scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, 1), 
+                       expand = c(0, 0)) +
+    geom_text(aes(label = all, 
+                  y     = prob.surv + 0.03),
+              position  = position_dodge(.9),
+              vjust     = "right",
+              hjust     = "right") +
+    # plot CIs (add a point shape at middle)
+    geom_errorbar(aes(ymax = up.CI, 
+                      ymin = low.CI), 
+                  size     = .4, 
+                  width    = .15, 
+                  linetype = "solid", 
+                  position = position_dodge(.9)) +
+    geom_point(position = position_dodge(.9), 
+               shape    = "-", 
+               show.legend = FALSE) +
     
     # Final adjustments:
     # set axis labels
@@ -102,22 +127,22 @@ ggplot(data = myDT.gr.all,
           # adjust X-axis title
           axis.title.x = element_text(size = 10, face = "bold"),
           # adjust X-axis labels
-          axis.text.x = element_text(size = 10, face = "bold", color="black"),
+          axis.text.x  = element_text(size = 10, face = "plain", color="black"),
           # adjust Y-axis title
           axis.title.y = element_text(size = 10, face = "bold"),
+          # adjust Y-axis labels
+          axis.text.y  = element_text(size = 10, face = "plain", color="black"),
           # adjust legend title appearance
-          legend.title = element_text(size = 8, face = "bold"),
+          legend.title = element_text(size = 10, face = "bold"),
           # adjust legend label appearance
-          legend.text = element_text(size = 8, face = "plain"),
+          legend.text  = element_text(size = 10, face = "plain"),
           # change spacing between legend items
-          legend.key.height = unit(4, "mm"),
+          legend.key.height = unit(5, "mm"),
           # don't draw legend box (check element_rect() for borders and backgrounds)
           legend.background = element_blank(),
-          # Put upper-left corner of legend box in upper-left corner of graph
-          # Note that the numeric position in legend.position below is relative to the entire area, 
-          # including titles and labels, not just the plotting area
-          legend.justification = c(0,1),
-          legend.position = c(0,1))
+
+          legend.justification = c(1,1),
+          legend.position = c(1,1))
 
 # save as pdf
 ggsave("barplot with CI bars - ggplot.pdf", width=12, height=8, units="cm")
