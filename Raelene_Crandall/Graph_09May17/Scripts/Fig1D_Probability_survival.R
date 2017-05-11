@@ -36,7 +36,11 @@ myDT.gr
 # Sorts the 1000 averages and takes the 25th and 975th positions
 boot.CI.percentile <- function(x, seed = 2017){
     set.seed(seed)
-    rep_avg <- replicate(1000, mean(sample(x, size = length(x), replace = TRUE), na.rm = TRUE))
+    rep_avg <- replicate(n    = 1000, 
+                         expr = mean(sample(x, 
+                                            size    = length(x), 
+                                            replace = TRUE), 
+                                     na.rm = TRUE))
     rep_avg <- sort(rep_avg, na.last = NA)
     low.CI  <- rep_avg[25]  
     up.CI   <- rep_avg[975] 
@@ -45,7 +49,7 @@ boot.CI.percentile <- function(x, seed = 2017){
     return(CIs)
 }
 
-# Compute percentile bootstrap CI
+# Compute percentile bootstrap CI with function defined above
 CIs <- list(
     myDT.noNA[Trt %like% "Comp|All"    & Burn %like% "N|All", boot.CI.percentile(Survival2)][, TrtBurn := "Comp_N"][],
     myDT.noNA[Trt %like% "Comp|All"    & Burn %like% "Y|All", boot.CI.percentile(Survival2)][, TrtBurn := "Comp_Y"][],
@@ -84,6 +88,7 @@ ggplot(data = myDT.gr.CI,
     # set range on OY axes and adjust the distance (gap) from OX axes
     scale_y_continuous(limits = c(0, 1), 
                        expand = c(0, 0)) +
+    # add total number of observations as text corresponding to each bar
     geom_text(aes(label = total, 
                   y     = prob.surv + 0.05),
               # position  = position_dodge(.9),
@@ -144,7 +149,10 @@ ggplot(data = myDT.gr.CI,
 
 # save as pdf
 ggsave("Output/Fig1D - barplot with CI bars - ggplot.pdf", width=12, height=10, units="cm")
+
+# write summary to csv
 write.csv(myDT.gr.CI, "Output/summary.csv", row.names = FALSE)
+
 # ===========================================
 # some part of the original code from Rae
 # ===========================================
