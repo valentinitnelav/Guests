@@ -115,7 +115,7 @@ ggplot(data = myDT.gr.CI,
     # Final adjustments:
     # set axis labels
     labs(x = "", 
-         y = "Probability of Survival") +
+         y = "Probability of survival") +
     theme_bw() + # eliminate default background 
     theme(panel.grid.major = element_blank(), # eliminate major grids
           panel.grid.minor = element_blank(), # eliminate minor grids
