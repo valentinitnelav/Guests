@@ -12,6 +12,7 @@ library(data.table)
 # =============================================================================
 mytbl <- fread("data/barplot_chisq/forvalentine.csv")
 
+# explode table
 mytbl_exploded <- mytbl[rep(x = 1:.N, times = Total)]
 
 # or in case of data.frame
