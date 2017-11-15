@@ -42,7 +42,7 @@ ggsave(plot_counts, file = "output/plot_counts.pdf", width=10, height=8, units="
 ggsave(plot_counts, file = "output/plot_counts.png", width=10, height=8, units="cm", dpi=300)
 
 # =============================================================================
-# barplot of percent
+# barplot of percent as chunk of all data
 # =============================================================================
 plot_percent <- 
     ggplot(data = mytbl_exploded) +
@@ -62,4 +62,13 @@ plot_percent <-
 ggsave(plot_percent, file = "output/plot_percent.pdf", width=10, height=8, units="cm")
 # save as png
 ggsave(plot_percent, file = "output/plot_percent.png", width=10, height=8, units="cm", dpi=300)
+
+# =============================================================================
+# barplot of percent as chunk of each Brush category
+# =============================================================================
+# Trial with basic plot function
+mytbl2 <- table(mytbl_exploded[,.(Deer,Brush)])
+mytbl2_prop <- prop.table(mytbl2, 2)
+barplot(mytbl2_prop)
+
 
