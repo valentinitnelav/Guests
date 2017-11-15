@@ -69,6 +69,11 @@ ggsave(plot_percent, file = "output/plot_percent.png", width=10, height=8, units
 # Trial with basic plot function
 mytbl2 <- table(mytbl_exploded[,.(Deer,Brush)])
 mytbl2_prop <- prop.table(mytbl2, 2)
-barplot(mytbl2_prop)
 
+par(mar=c(5.1, 4.1, 4.1, 7.1), xpd=TRUE)
+barplot(mytbl2_prop, col = c("#F8766D", "#00BFC4"))
+legend("topright", 
+       fill = c("#F8766D", "#00BFC4"),
+       legend = c("absent", "present"),
+       inset = c(-0.15,0))
 
