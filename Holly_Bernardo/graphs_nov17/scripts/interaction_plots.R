@@ -51,7 +51,7 @@ all_data[, ':=' ( maxbrush_cate  = factor(maxbrush_cate,
 # -----------------------------------------------------------------------------
 # Use data.table syntax for aggregation
 avg_brush_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-                               rate_sd  = sd(r.t.),                 # get SD-s
+                               rate_sd  = sd(r.t., na.rm = TRUE),   # get SD-s
                                N_obs    = .N),                      # get number of observations
                            by = .(maxbrush_cate, deer_cate)] # while grouping by maxbrush_cate & deer_cate
 
@@ -122,7 +122,7 @@ ggsave(plot = interaction_plot_brush_deer,
 # -----------------------------------------------------------------------------
 # Use data.table syntax for aggregation
 avg_brush_burn <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-                               rate_sd  = sd(r.t.),                 # get SD-s
+                               rate_sd  = sd(r.t., na.rm = TRUE),   # get SD-s
                                N_obs    = .N),                      # get number of observations
                            by = .(maxbrush_cate, burnyear_cate)] # while grouping by maxbrush_cate & burnyear_cate
 avg_brush_burn[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
@@ -183,7 +183,7 @@ ggsave(plot = interaction_plot_brush_burn,
 # -----------------------------------------------------------------------------
 # Use data.table syntax for aggregation
 avg_brush_burn_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-                                    rate_sd  = sd(r.t.),                 # get SD-s
+                                    rate_sd  = sd(r.t., na.rm = TRUE),   # get SD-s
                                     N_obs    = .N),                      # get number of observations
                                 by = .(burnyear_cate, maxbrush_cate, deer_cate)] # while grouping
 avg_brush_burn_deer[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
@@ -251,7 +251,7 @@ ggsave(plot = interaction_plot_brush_burn_deer,
 # -----------------------------------------------------------------------------
 # Use data.table syntax for aggregation
 avg_brush_burn_trail <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-                                     rate_sd  = sd(r.t.),                 # get SD-s
+                                     rate_sd  = sd(r.t., na.rm = TRUE),   # get SD-s
                                      N_obs    = .N),                      # get number of observations
                                  by = .(burnyear_cate, maxbrush_cate, maxtrails_cate)] # while grouping
 avg_brush_burn_trail[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
