@@ -60,7 +60,7 @@ avg_brush_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
 # avg_brush_deer <- all_data[species == "Asclepias exaltata", # select certain species
 #                            .(rate_avg = mean(r.t., na.rm = TRUE), # get means
 #                              # get SD-s: if sd is NA (happens when only one observation)
-#                              # then put a zero so that it does nto get deleted by complete.cases cleaning of NA-s below
+#                              # then put a zero so that it does not get deleted by complete.cases cleaning of NA-s below
 #                              rate_sd  = ifelse(is.na(sd(r.t., na.rm = TRUE)),
 #                                                0,
 #                                                sd(r.t., na.rm = TRUE)),
