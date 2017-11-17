@@ -57,10 +57,14 @@ avg_brush_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
 
 # # If you need grouping  for a certain species, then add the line species == "my_sp_name" like below
 # # This is valid for all plot cases that fallow below
-# avg_brush_deer <- all_data[species == "Asclepias exaltata",       # select certain species
+# avg_brush_deer <- all_data[species == "Asclepias exaltata", # select certain species
 #                            .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-#                              rate_sd  = sd(r.t.),                 # get SD-s
-#                              N_obs    = .N),                      # get number of observations
+#                              # get SD-s: if sd is NA (happens when only one observation)
+#                              # then put a zero so that it does nto get deleted by complete.cases cleaning of NA-s below
+#                              rate_sd  = ifelse(is.na(sd(r.t., na.rm = TRUE)),
+#                                                0,
+#                                                sd(r.t., na.rm = TRUE)),
+#                              N_obs    = .N),# get number of observations
 #                            by = .(maxbrush_cate, deer_cate)]
 
 avg_brush_deer[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
