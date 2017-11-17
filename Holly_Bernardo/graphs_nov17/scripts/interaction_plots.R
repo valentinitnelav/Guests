@@ -59,18 +59,14 @@ avg_brush_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
 # # This is valid for all plot cases that fallow below
 # avg_brush_deer <- all_data[species == "Asclepias exaltata", # select certain species
 #                            .(rate_avg = mean(r.t., na.rm = TRUE), # get means
-#                              # get SD-s: if sd is NA (happens when only one observation)
-#                              # then put a zero so that it does not get deleted by complete.cases cleaning of NA-s below
-#                              rate_sd  = ifelse(is.na(sd(r.t., na.rm = TRUE)),
-#                                                0,
-#                                                sd(r.t., na.rm = TRUE)),
-#                              N_obs    = .N),# get number of observations
+#                              rate_sd  = sd(r.t., na.rm = TRUE),   # get SD-s
+#                              N_obs    = .N),                      # get number of observations
 #                            by = .(maxbrush_cate, deer_cate)]
 
 avg_brush_deer[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
 avg_brush_deer # check results
-# remove the NA-s
-avg_brush_deer <- avg_brush_deer[complete.cases(avg_brush_deer)]
+# remove rows with NA-s in grouping variables
+avg_brush_deer <- avg_brush_deer[complete.cases(avg_brush_deer[,.(maxbrush_cate, deer_cate)])]
 avg_brush_deer # check results
 
 # -----------------------------------------------------------------------------
@@ -131,8 +127,8 @@ avg_brush_burn <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get means
                            by = .(maxbrush_cate, burnyear_cate)] # while grouping by maxbrush_cate & burnyear_cate
 avg_brush_burn[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
 avg_brush_burn # check results
-# remove the NA-s
-avg_brush_burn <- avg_brush_burn[complete.cases(avg_brush_burn)]
+# remove rows with NA-s in grouping variables
+avg_brush_burn <- avg_brush_burn[complete.cases(avg_brush_burn[,.(maxbrush_cate, burnyear_cate)])]
 avg_brush_burn # check results
 
 # -----------------------------------------------------------------------------
@@ -192,8 +188,10 @@ avg_brush_burn_deer <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get m
                                 by = .(burnyear_cate, maxbrush_cate, deer_cate)] # while grouping
 avg_brush_burn_deer[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
 avg_brush_burn_deer # check results
-# remove the NA-s
-avg_brush_burn_deer <- avg_brush_burn_deer[complete.cases(avg_brush_burn_deer)]
+# remove rows with NA-s in grouping variables
+avg_brush_burn_deer <- avg_brush_burn_deer[complete.cases(avg_brush_burn_deer[,.(burnyear_cate,
+                                                                                 maxbrush_cate,
+                                                                                 deer_cate)])]
 avg_brush_burn_deer # check results
 
 # -----------------------------------------------------------------------------
@@ -260,8 +258,10 @@ avg_brush_burn_trail <- all_data[, .(rate_avg = mean(r.t., na.rm = TRUE), # get 
                                  by = .(burnyear_cate, maxbrush_cate, maxtrails_cate)] # while grouping
 avg_brush_burn_trail[, rate_se := rate_sd/sqrt(N_obs)] # compute SE-s as SD/sqrt(N)
 avg_brush_burn_trail # check results
-# remove the NA-s
-avg_brush_burn_trail <- avg_brush_burn_trail[complete.cases(avg_brush_burn_trail)]
+# remove rows with NA-s in grouping variables
+avg_brush_burn_trail <- avg_brush_burn_trail[complete.cases(avg_brush_burn_trail[,.(burnyear_cate,
+                                                                                    maxbrush_cate,
+                                                                                    maxtrails_cate)])]
 avg_brush_burn_trail # check results
 
 # -----------------------------------------------------------------------------
